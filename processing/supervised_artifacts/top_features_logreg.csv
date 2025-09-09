@@ -1,0 +1,51 @@
+feature_after_encode,abs_coef
+dup_score_max,2.2104133708921054
+duplicated,2.1743118133761317
+dup_group_id,0.8840776525252014
+sold_bucket_ord,0.7937211917249276
+sold_bucket_51-100,0.7459906398412106
+price_bucket_0.5-1M,0.7258844924316743
+name_len,0.6488942447578498
+sold_bucket_101-500,0.6143151122883416
+seller_id_freq,0.6019078493343567
+name_word_count,0.596333448395234
+price_bucket_ord,0.5745438867477054
+discount_bucket_20-30%,0.5399640434157962
+price_bucket_10-20M,0.5256865537957383
+seller_id_le,0.4950903921632045
+price_bucket_1-2M,0.46831937895880354
+price,0.46158862215796015
+discount_bucket_ord,0.4306416632656781
+seller_id,0.42599128886576504
+sold_bucket_501-1000,0.3807293993253104
+discount_bucket_30-50%,0.3794577613182077
+brand_key_le,0.32736650944025253
+model_key_le,0.3201190403549822
+rating_bucket_3-4,0.31553204783587274
+sold_bucket_11-50,0.3126126314966487
+price_bucket_2-5M,0.27169633869015636
+rating_bucket_ord,0.2372143169535819
+rating_bucket_4.5-5,0.23255718458493738
+discount_percent_clean,0.22896868148283733
+price_log1p,0.2123572177089112
+visible_impression_info_amplitude_category_l1_name_Máy Ảnh - Máy Quay Phim,0.1978364198194829
+source_camera,0.1978364198194829
+price_bucket_>20M,0.19525810372795455
+sold_bucket_1-10,0.19507425831290312
+visible_impression_info_amplitude_category_l1_name_Laptop - Máy Vi Tính - Linh kiện,0.19194626906200576
+source_laptop,0.19194626906200576
+source_speaker,0.1639594805155742
+visible_impression_info_amplitude_category_l1_name_Thiết Bị Số - Phụ Kiện Số,0.1639594805155742
+quantity_sold_value,0.1614993874050914
+brand_key_freq,0.14066213455898613
+brand_freq,0.14066213455898613
+discount_bucket_50-100%,0.13578853210459918
+brand_le,0.12758021063221833
+sold_bucket_>1000,0.12219701005213268
+has_model_hint,0.12028777130204857
+discount_bucket_10-20%,0.11737578862638422
+discount_bucket_0-10%,0.10880348279457414
+source_tv,0.09896978462443967
+visible_impression_info_amplitude_category_l1_name_Điện Tử - Điện Lạnh,0.09896978462443967
+price_bucket_≤0.5M,0.09806703669849974
+price_bucket_5-10M,0.09144747686017912
