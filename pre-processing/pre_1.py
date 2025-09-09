@@ -6,11 +6,11 @@ from pathlib import Path
 
 # ===================== CẤU HÌNH =====================
 FILES = [
-    "D:/DataMining/project/pre-processing/data_cleaned/phone.xlsx",  # Đường dẫn tuyệt đối
-    "D:/DataMining/project/pre-processing/data_cleaned/laptop.xlsx",
-    "D:/DataMining/project/pre-processing/data_cleaned/camera.xlsx",
-    "D:/DataMining/project/pre-processing/data_cleaned/speaker.xlsx",
-    "D:/DataMining/project/pre-processing/data_cleaned/tv.xlsx"
+    "data_cleaned/phone.xlsx",  # Đường dẫn tương đối
+    "data_cleaned/laptop.xlsx",
+    "data_cleaned/camera.xlsx",
+    "data_cleaned/speaker.xlsx",
+    "data_cleaned/tv.xlsx"
 ]
 SAVE_OUTPUT = True
 OUTPUT_PATH = "integrated_data.xlsx"
