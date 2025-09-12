@@ -5,6 +5,7 @@ import time
 import random
 import logging
 from typing import Dict, Any, List, Set
+from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -21,7 +22,7 @@ DOWNLOAD_IMAGES = True          # bật/tắt tải ảnh
 OUTPUT_STEM = "data_tv"         # sinh ra data_tv.ndjson / data_tv.xlsx / images/tv/
 IMAGES_DIR = "images/tv"
 NDJSON_PATH = f"{OUTPUT_STEM}.ndjson"   # file trung gian an toàn schema
-XLSX_PATH  = f"data/{OUTPUT_STEM}.xlsx"      # file cuối cùng
+XLSX_PATH  = f"data/{OUTPUT_STEM}.xlsx"
 BATCH_SIZE = 100                        # ghi mỗi 100 sản phẩm
 
 REQUEST_TIMEOUT = 15
@@ -43,7 +44,7 @@ API_URL = "https://tiki.vn/api/personalish/v1/blocks/listings"
 # ==================================================
 
 # ---------------- Logging ----------------
-LOG_PATH = "crawl_tv.log"
+LOG_PATH = "crawl_laptop.log"
 logging.basicConfig(
     filename=LOG_PATH,
     level=logging.INFO,
@@ -70,6 +71,51 @@ def build_session() -> requests.Session:
 # ---------------- Utils ----------------
 def jitter_sleep():
     time.sleep(random.uniform(*JITTER_RANGE))
+
+def get_image_extension_from_url(url: str) -> str:
+    """Lấy phần mở rộng file từ URL ảnh"""
+    try:
+        # Phân tích URL để lấy path
+        parsed = urlparse(url)
+        path = parsed.path
+        
+        # Tách phần mở rộng từ path
+        _, ext = os.path.splitext(path)
+        
+        # Loại bỏ các query parameters nếu có và trả về extension
+        clean_ext = ext.split('?')[0].lower() if ext else ''
+        
+        # Kiểm tra nếu extension hợp lệ
+        valid_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff']
+        if clean_ext in valid_extensions:
+            return clean_ext
+        else:
+            # Nếu không xác định được, mặc định là jpg
+            LOGGER.warning(f"Không xác định được định dạng ảnh từ URL: {url}, sử dụng .jpg làm mặc định")
+            return '.jpg'
+    except Exception as e:
+        LOGGER.error(f"Lỗi khi phân tích URL ảnh {url}: {e}")
+        return '.jpg'
+
+def get_image_extension_from_content_type(content_type: str) -> str:
+    """Lấy phần mở rộng file từ Content-Type header"""
+    content_type = content_type.lower() if content_type else ''
+    
+    if 'jpeg' in content_type or 'jpg' in content_type:
+        return '.jpg'
+    elif 'png' in content_type:
+        return '.png'
+    elif 'webp' in content_type:
+        return '.webp'
+    elif 'gif' in content_type:
+        return '.gif'
+    elif 'bmp' in content_type:
+        return '.bmp'
+    elif 'tiff' in content_type:
+        return '.tiff'
+    else:
+        LOGGER.warning(f"Không xác định được định dạng ảnh từ Content-Type: {content_type}, sử dụng .jpg làm mặc định")
+        return '.jpg'
 
 def flatten_json(obj: Any, parent_key: str = "", result: Dict[str, Any] = None) -> Dict[str, Any]:
     if result is None:
@@ -148,12 +194,23 @@ def fetch_listing_page(session: requests.Session, category_id: int, page: int, l
         LOGGER.error(f"Lỗi parse JSON page={page}: {e}")
         return {}
 
-def download_image(session: requests.Session, url: str, filename: str) -> str:
+def download_image(session: requests.Session, url: str, base_filename: str) -> str:
     try:
         jitter_sleep()
         res = session.get(url, timeout=REQUEST_TIMEOUT)
         ctype = res.headers.get("Content-Type", "").lower()
+        
         if res.status_code == 200 and "image" in ctype:
+            # Xác định định dạng ảnh gốc
+            ext_from_url = get_image_extension_from_url(url)
+            ext_from_content = get_image_extension_from_content_type(ctype)
+            
+            # Ưu tiên sử dụng extension từ Content-Type
+            final_ext = ext_from_content if ext_from_content != '.jpg' else ext_from_url
+            
+            # Tạo tên file với đúng định dạng ảnh gốc
+            filename = f"{base_filename}{final_ext}"
+            
             with open(filename, "wb") as f:
                 f.write(res.content)
             return filename
@@ -172,17 +229,17 @@ def crawl_tiki_api(category_id: int, max_products: int, limit: int, output_dir: 
     total = 0
     page = 1
 
-    LOGGER.info(f"Start crawl: category_id=%s, max_products=%s, limit=%s", category_id, max_products, limit)
+    LOGGER.info(f"Start crawl: category_id={category_id}, max_products={max_products}, limit={limit}")
 
     while total < max_products:
         data = fetch_listing_page(session, category_id, page, limit)
         if not data:
-            LOGGER.info("Dừng: không lấy được dữ liệu tại page=%s", page)
+            LOGGER.info(f"Dừng: không lấy được dữ liệu tại page={page}")
             break
 
         products = data.get("data", [])
         if not products:
-            LOGGER.info("Dừng: page=%s không có sản phẩm.", page)
+            LOGGER.info(f"Dừng: page={page} không có sản phẩm.")
             break
 
         for p in products:
@@ -192,7 +249,7 @@ def crawl_tiki_api(category_id: int, max_products: int, limit: int, output_dir: 
             pid = p.get("id")
             name = p.get("name")
             if not pid or not name:
-                LOGGER.info("Bỏ qua bản ghi thiếu id hoặc name: %s", p)
+                LOGGER.info(f"Bỏ qua bản ghi thiếu id hoặc name: {p}")
                 continue
             if pid in seen_ids:
                 continue
@@ -207,8 +264,9 @@ def crawl_tiki_api(category_id: int, max_products: int, limit: int, output_dir: 
             if DOWNLOAD_IMAGES:
                 img_url = p.get("thumbnail_url") or p.get("image_url")
                 if img_url:
-                    fname = os.path.join(output_dir, f"product_{pid}.jpg")
-                    rec["image_path"] = download_image(session, img_url, fname)
+                    # Chỉ truyền base filename (không có extension)
+                    base_fname = os.path.join(output_dir, f"{pid}")
+                    rec["image_path"] = download_image(session, img_url, base_fname)
                 else:
                     rec["image_path"] = ""
             else:
@@ -225,7 +283,7 @@ def crawl_tiki_api(category_id: int, max_products: int, limit: int, output_dir: 
     # flush phần còn lại & xuất Excel
     save_batch_to_ndjson(batch)
     finalize_to_excel()
-    LOGGER.info("Hoàn tất: thu được %s sản phẩm.", total)
+    LOGGER.info(f"Hoàn tất: thu được {total} sản phẩm.")
 
 # ---------------- Entrypoint ----------------
 if __name__ == "__main__":
@@ -241,5 +299,5 @@ if __name__ == "__main__":
             f"(Trung gian: '{NDJSON_PATH}') Ảnh ở '{IMAGES_DIR}/'."
         )
     except Exception as e:
-        LOGGER.exception("CRASH: %s", e)
-        print("Có lỗi nghiêm trọng, xem thêm trong crawl_tv.log")
+        LOGGER.exception(f"CRASH: {e}")
+        print("Có lỗi nghiêm trọng, xem thêm trong crawl_laptop.log")

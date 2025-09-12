@@ -5,6 +5,7 @@ import time
 import random
 import logging
 from typing import Dict, Any, List, Set
+from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -12,22 +13,18 @@ from requests.packages.urllib3.util.retry import Retry
 import pandas as pd
 
 # ===================== CONFIG =====================
-CATEGORY_ID = 1805           # Speaker / Loa
-MAX_PRODUCTS = 100           # tối đa sản phẩm muốn lấy (đổi 100 nếu muốn)
+CATEGORY_ID = 1805           # category mặc định
+MAX_PRODUCTS = 100           # <-- chỉ cào 100 sản phẩm
 LIMIT_PER_PAGE = 40          # theo API Tiki
 DOWNLOAD_IMAGES = True       # bật/tắt tải ảnh
 
-# ---- Đặt "stem" cho bộ file xuất ----
-OUTPUT_STEM = "data_speaker"       # sẽ sinh: data/data_speaker.ndjson, data/data_speaker.xlsx
-IMAGES_DIR  = "images/speaker"     # thư mục ảnh
+# >>> ĐỔI TÊN BỘ FILE/THƯ MỤC TẠI ĐÂY <<<
+OUTPUT_STEM = "data_speaker"
 
-# Tạo thư mục chứa dữ liệu/ảnh nếu chưa có
-os.makedirs("data", exist_ok=True)
-os.makedirs(IMAGES_DIR, exist_ok=True)
-
+IMAGES_DIR = f"images/speaker"
 NDJSON_PATH = f"{OUTPUT_STEM}.ndjson"   # file trung gian an toàn schema
-XLSX_PATH  = f"data/{OUTPUT_STEM}.xlsx"      # file cuối cùng
-BATCH_SIZE = 100                              # ghi mỗi 100 sản phẩm
+XLSX_PATH = f"data/{OUTPUT_STEM}.xlsx"
+BATCH_SIZE = 100                        # ghi mỗi 100 sản phẩm
 
 REQUEST_TIMEOUT = 15
 RETRY_TOTAL = 5
@@ -48,7 +45,7 @@ API_URL = "https://tiki.vn/api/personalish/v1/blocks/listings"
 # ==================================================
 
 # ---------------- Logging ----------------
-LOG_PATH = "crawl_speaker.log"
+LOG_PATH = "crawl_laptop.log"
 logging.basicConfig(
     filename=LOG_PATH,
     level=logging.INFO,
@@ -75,6 +72,51 @@ def build_session() -> requests.Session:
 # ---------------- Utils ----------------
 def jitter_sleep():
     time.sleep(random.uniform(*JITTER_RANGE))
+
+def get_image_extension_from_url(url: str) -> str:
+    """Lấy phần mở rộng file từ URL ảnh"""
+    try:
+        # Phân tích URL để lấy path
+        parsed = urlparse(url)
+        path = parsed.path
+        
+        # Tách phần mở rộng từ path
+        _, ext = os.path.splitext(path)
+        
+        # Loại bỏ các query parameters nếu có và trả về extension
+        clean_ext = ext.split('?')[0].lower() if ext else ''
+        
+        # Kiểm tra nếu extension hợp lệ
+        valid_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff']
+        if clean_ext in valid_extensions:
+            return clean_ext
+        else:
+            # Nếu không xác định được, mặc định là jpg
+            LOGGER.warning(f"Không xác định được định dạng ảnh từ URL: {url}, sử dụng .jpg làm mặc định")
+            return '.jpg'
+    except Exception as e:
+        LOGGER.error(f"Lỗi khi phân tích URL ảnh {url}: {e}")
+        return '.jpg'
+
+def get_image_extension_from_content_type(content_type: str) -> str:
+    """Lấy phần mở rộng file từ Content-Type header"""
+    content_type = content_type.lower() if content_type else ''
+    
+    if 'jpeg' in content_type or 'jpg' in content_type:
+        return '.jpg'
+    elif 'png' in content_type:
+        return '.png'
+    elif 'webp' in content_type:
+        return '.webp'
+    elif 'gif' in content_type:
+        return '.gif'
+    elif 'bmp' in content_type:
+        return '.bmp'
+    elif 'tiff' in content_type:
+        return '.tiff'
+    else:
+        LOGGER.warning(f"Không xác định được định dạng ảnh từ Content-Type: {content_type}, sử dụng .jpg làm mặc định")
+        return '.jpg'
 
 def flatten_json(obj: Any, parent_key: str = "", result: Dict[str, Any] = None) -> Dict[str, Any]:
     if result is None:
@@ -136,8 +178,8 @@ def finalize_to_excel():
         LOGGER.info(f"Đã xuất {len(df)} dòng vào {XLSX_PATH}")
     except Exception as e:
         LOGGER.exception(f"Lỗi xuất Excel, sẽ fallback sang CSV: {e}")
-        df.to_csv(f"data/{OUTPUT_STEM}_fallback.csv", index=False, encoding="utf-8")
-        LOGGER.info(f"Đã xuất {len(df)} dòng vào data/{OUTPUT_STEM}_fallback.csv (fallback)")
+        df.to_csv(f"{OUTPUT_STEM}_fallback.csv", index=False, encoding="utf-8")
+        LOGGER.info(f"Đã xuất {len(df)} dòng vào {OUTPUT_STEM}_fallback.csv (fallback)")
 
 # ---------------- Core Functions ----------------
 def fetch_listing_page(session: requests.Session, category_id: int, page: int, limit: int) -> Dict[str, Any]:
@@ -153,12 +195,23 @@ def fetch_listing_page(session: requests.Session, category_id: int, page: int, l
         LOGGER.error(f"Lỗi parse JSON page={page}: {e}")
         return {}
 
-def download_image(session: requests.Session, url: str, filename: str) -> str:
+def download_image(session: requests.Session, url: str, base_filename: str) -> str:
     try:
         jitter_sleep()
         res = session.get(url, timeout=REQUEST_TIMEOUT)
         ctype = res.headers.get("Content-Type", "").lower()
+        
         if res.status_code == 200 and "image" in ctype:
+            # Xác định định dạng ảnh gốc
+            ext_from_url = get_image_extension_from_url(url)
+            ext_from_content = get_image_extension_from_content_type(ctype)
+            
+            # Ưu tiên sử dụng extension từ Content-Type
+            final_ext = ext_from_content if ext_from_content != '.jpg' else ext_from_url
+            
+            # Tạo tên file với đúng định dạng ảnh gốc
+            filename = f"{base_filename}{final_ext}"
+            
             with open(filename, "wb") as f:
                 f.write(res.content)
             return filename
@@ -212,8 +265,9 @@ def crawl_tiki_api(category_id: int, max_products: int, limit: int, output_dir: 
             if DOWNLOAD_IMAGES:
                 img_url = p.get("thumbnail_url") or p.get("image_url")
                 if img_url:
-                    fname = os.path.join(output_dir, f"product_{pid}.jpg")
-                    rec["image_path"] = download_image(session, img_url, fname)
+                    # Chỉ truyền base filename (không có extension)
+                    base_fname = os.path.join(output_dir, f"{pid}")
+                    rec["image_path"] = download_image(session, img_url, base_fname)
                 else:
                     rec["image_path"] = ""
             else:
@@ -247,4 +301,4 @@ if __name__ == "__main__":
         )
     except Exception as e:
         LOGGER.exception(f"CRASH: {e}")
-        print("Có lỗi nghiêm trọng, xem thêm trong crawl_speaker.log")
+        print("Có lỗi nghiêm trọng, xem thêm trong crawl_laptop.log")

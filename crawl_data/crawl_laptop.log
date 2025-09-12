@@ -1,3 +1,12 @@
-2025-08-22 23:10:27,368 - INFO - Start crawl: category_id=8095, max_products=100, limit=40
-2025-08-22 23:11:31,959 - INFO - Đã xuất 100 dòng vào data/data_laptop.xlsx
-2025-08-22 23:11:31,959 - INFO - Hoàn tất: thu được 100 sản phẩm.
+2025-09-12 03:16:21,160 - INFO - Start crawl: category_id=8095, max_products=100, limit=40
+2025-09-12 03:17:27,987 - INFO - Đã xuất 100 dòng vào data/data_laptop.xlsx
+2025-09-12 03:17:27,988 - INFO - Hoàn tất: thu được 100 sản phẩm.
+2025-09-12 03:17:41,761 - INFO - Start crawl: category_id=1789, max_products=100, limit=40
+2025-09-12 03:18:49,914 - INFO - Đã xuất 100 dòng vào data/data_phone.xlsx
+2025-09-12 03:18:49,915 - INFO - Hoàn tất: thu được 100 sản phẩm.
+2025-09-12 03:19:11,221 - INFO - Start crawl: category_id=1805, max_products=100, limit=40
+2025-09-12 03:20:20,402 - INFO - Đã xuất 100 dòng vào data/data_speaker.xlsx
+2025-09-12 03:20:20,402 - INFO - Hoàn tất: thu được 100 sản phẩm.
+2025-09-12 03:21:33,227 - INFO - Start crawl: category_id=5015, max_products=100, limit=40
+2025-09-12 03:22:41,167 - INFO - Đã xuất 100 dòng vào data/data_tv.xlsx
+2025-09-12 03:22:41,168 - INFO - Hoàn tất: thu được 100 sản phẩm.

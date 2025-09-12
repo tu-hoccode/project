@@ -210,7 +210,7 @@ def crawl_tiki_api(category_id: int, max_products: int, limit: int, output_dir: 
             if DOWNLOAD_IMAGES:
                 img_url = p.get("thumbnail_url") or p.get("image_url")
                 if img_url:
-                    fname = os.path.join(output_dir, f"product_{pid}.jpg")
+                    fname = os.path.join(output_dir, f"{pid}.jpg")
                     rec["image_path"] = download_image(session, img_url, fname)
                 else:
                     rec["image_path"] = ""
