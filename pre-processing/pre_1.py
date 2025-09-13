@@ -13,7 +13,7 @@ FILES = [
     "data_cleaned/tv.xlsx",
 ]
 
-OUTPUT_PATH = "data_pre_1.xlsx"
+OUTPUT_PATH = "pre_data_1.xlsx"
 NEEDED = ["category", "id", "title", "url", "path"]
 
 def run_integration(files, out_path):
