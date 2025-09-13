@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 LABELED_XLSX       = "process_data_1.xlsx"  # từ bước Labeled Data
 EMB_NPY            = "embeddings_resnet50.npy"
 PATHS_JSON         = "image_paths.json"
-COS_CLUSTER        = 0.90        # ngưỡng nối cạnh để gom nhóm
+COS_CLUSTER        = 0.89        # ngưỡng nối cạnh để gom nhóm
 BLOCK              = 2048        # tính cosine theo block tránh tràn RAM
 ONLY_DUPLICATES    = True        # True: chỉ gom ảnh is_duplicate=1
 MIN_CLUSTER_SIZE   = 2           # cụm phải >= 2 ảnh mới coi là cluster hợp lệ
