@@ -1,10 +1,3 @@
-# %% [markdown]
-# ## Labeled Data (Duplicate & Near-Duplicate Detection - Simplified)
-# - Dùng ResNet50 embeddings + cosine similarity
-# - Gom nhóm bằng Union-Find
-# - Chỉ giữ dup_group_id, dup_count, is_duplicate
-# - Xuất process_data_1_labeled.xlsx
-
 import os, itertools, json
 import numpy as np
 import pandas as pd

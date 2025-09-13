@@ -1,5 +1,3 @@
-# %% [markdown]
-# 1) Extract embeddings with TensorFlow (ResNet50, ImageNet)
 import os
 import json
 import numpy as np

@@ -1,6 +1,3 @@
-# Bước integration: gộp các file đã làm sạch thành 1 file duy nhất
-# Đảm bảo file đầu ra có đúng 5 cột: category, id, title, url, path
-# Nếu file nào thiếu cột thì thêm NA vào
 import pandas as pd
 from pathlib import Path
 
