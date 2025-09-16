@@ -1,0 +1,4 @@
+{
+  "threshold": 0.95,
+  "f1_on_test": 1.0
+}
