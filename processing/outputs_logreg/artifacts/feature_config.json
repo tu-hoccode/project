@@ -1,0 +1,13 @@
+{
+  "img_size": [
+    224,
+    224
+  ],
+  "features": [
+    "abs_diff(2048)",
+    "prod(2048)",
+    "cos(1)",
+    "l2(1)"
+  ],
+  "embedding": "ResNet50(ImageNet, avg pool, frozen)"
+}
